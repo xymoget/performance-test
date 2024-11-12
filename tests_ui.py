@@ -6,6 +6,27 @@ import database
 import psutil
 import platform
 from datetime import datetime
+import tests
+
+class TestRunnable(QtCore.QRunnable):
+    def __init__(self, test_type, callback):
+        super().__init__()
+        self.test_type = test_type
+        self.callback = callback  # Function to call with the result
+
+    def run(self):
+        # Run the appropriate test function based on test type
+        if self.test_type == "CPU":
+            result = tests.cpu_test()
+        elif self.test_type == "RAM":
+            result = tests.ram_test()
+        elif self.test_type == "DISK":
+            result = tests.disk_test()
+        else:
+            result = 0  # Default result if test type is unknown
+
+        # Call the callback function with the test result
+        self.callback(result)
 
 class StopwatchLabel(QtWidgets.QLabel):
     """A label that acts as a stopwatch."""
@@ -231,7 +252,15 @@ def create_test_ui(main_window, test_type):
         back_button.setEnabled(False)  # Block navigation until the test ends
         output_label.setText("Running test...")
         stopwatch.start()
-        QtCore.QTimer.singleShot(20000, lambda: finish_test(output_label, start_button, back_button, stopwatch, export_button, other_results_button, test_type, test_result))
+
+        # Define a callback to handle the result after the test completes
+        def handle_test_result(result):
+            stopwatch.stop()  # Stop the stopwatch when the test completes
+            finish_test(output_label, start_button, back_button, stopwatch, export_button, other_results_button, test_type, test_result, result)
+
+        # Create a runnable with the test type and callback, then start it
+        runnable = TestRunnable(test_type, handle_test_result)
+        QtCore.QThreadPool.globalInstance().start(runnable)
 
     start_button.clicked.connect(start_test)
     layout.addWidget(start_button)
@@ -284,23 +313,14 @@ def create_test_ui(main_window, test_type):
 
     return widget
 
-def finish_test(output_label, start_button, back_button, stopwatch, export_button, other_results_button, test_type, test_result):
-    if test_type == "CPU":
-        random_number = random.randint(5000, 6500)
-    elif test_type == "RAM":
-        random_number = random.randint(2000, 3000)
-    elif test_type == "DISK":
-        random_number = random.randint(4000, 5000)
-    else:
-        random_number = 0  # Default result if test type is unknown
-
-    stopwatch.stop()
-    output_label.setText(f"Test completed. Result: {random_number}")
-    database.insert_test_result(test_type, random_number)  # Save to the database
+def finish_test(output_label, start_button, back_button, stopwatch, export_button, other_results_button, test_type, test_result, result):
+    # Display the actual result from the test
+    output_label.setText(f"Test completed. Result: {result}")
+    database.insert_test_result(test_type, result)  # Save to the database
     start_button.setEnabled(True)
     back_button.setEnabled(True)  # Enable back button after the test ends
     export_button.setVisible(True)  # Show the export button
     other_results_button.setVisible(True)  # Show the Other Results button after test ends
 
     # Store the test result for exporting
-    test_result["value"] = random_number
+    test_result["value"] = result
