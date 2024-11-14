@@ -15,7 +15,7 @@ def cpu_test():
             result = 1  # Reset to prevent overflow
     end_time = time.time()
     duration = end_time - start_time
-    cpu_score = int(5000 + (5 / duration))  # Calculate a score based on time taken
+    cpu_score = 250000 / duration  # Calculate a score based on time taken
     return cpu_score
 
 def ram_test():
@@ -26,7 +26,7 @@ def ram_test():
         data[i] = data[i] ** 2  # Manipulate list data to simulate load
     end_time = time.time()
     duration = end_time - start_time
-    ram_score = int(3000 + (2 / duration))  # Calculate a score based on time taken
+    ram_score = round(100000 / duration, 1)
     return ram_score
 
 def disk_test():
@@ -34,13 +34,14 @@ def disk_test():
     start_time = time.time()
     temp_file = tempfile.NamedTemporaryFile(delete=False)
     try:
-        # Write a large amount of data
-        temp_file.write(os.urandom(10**7))  # 10 MB of random data
-        temp_file.flush()
-        temp_file.seek(0)
+        for _ in range(10):
+            # Write a large amount of data
+            temp_file.write(os.urandom(10**9))  # 10 MB of random data
+            temp_file.flush()
+            temp_file.seek(0)
 
-        # Read the data back
-        temp_file.read()
+            # Read the data back
+            temp_file.read()
 
     finally:
         temp_file.close()
@@ -48,5 +49,5 @@ def disk_test():
 
     end_time = time.time()
     duration = end_time - start_time
-    disk_score = int(4000 + (3 / duration))  # Calculate a score based on time taken
+    disk_score = 25000 / duration  # Calculate a score based on time taken
     return disk_score

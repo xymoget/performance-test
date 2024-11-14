@@ -1,0 +1,4 @@
+RAM Benchmark
+Result: 4697.6
+Time taken: 21 seconds
+Datetime of the test: 11/13/2024 03:01PM
